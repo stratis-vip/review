@@ -129,6 +129,7 @@ NAME must be UNQUOTED symbol"
   ```lisp
 (defun clear-suites ()
   "Resets the *-SUITE* variables"
+  ...)
   ```
   ### run-test
   ```lisp
