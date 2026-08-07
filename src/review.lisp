@@ -4,9 +4,11 @@
 
 (in-package :review)
 
-(defvar *current-suite* nil)
+(defvar *current-suite* nil
+  "The current suite. A defstruct SUITE")
 
-(defvar *registry-suite* (make-hash-table :test #'eq))
+(defvar *registry-suite* (make-hash-table :test #'eq)
+  "Keeps all suites with the tests and their checks.")
 
 (defstruct suite
   name
@@ -29,19 +31,24 @@
   )
 
 (defun find-suite (name &key (registry *registry-suite*))
+  "Returns the SUITE NAME, if exists at REGISTRY. Default registry is *registry-suite*"
   (gethash name registry))
 
 (defun register-suite (name &key (registry *registry-suite*))
+  "Register a SUITE with name NAME to the registry REGISTRY. Default registry is *registry-suite*. "
   (check-type name symbol)
   (when (gethash name registry)
     (error "Suite ~S already exists" name))
   (setf (gethash name registry) (make-suite :name name)))
 
 (defmacro defsuite (name)
+  "Creates a SUITE structure with the NAME and add it to the *registry-suite* hash table.
+NAME must be UNQUOTED symbol"
   `(register-suite ',name)
 )
 
 (defmacro in-suite (name)
+  "Sets the *CURRENT-SUITE* global variable to the suite with name NAME"
   `(let ((local-suite (find-suite ',name)))
      (unless local-suite
        (error "Unknown suite ~S" ',name))
@@ -65,18 +72,20 @@ its value isn't exactly T or NIL. Otherwise evaluates to that value."
        ,result)))
 
 (defmacro prepare-check (form &key (is-true t))
-   `(let ((value (make-correct-check ,form)))
+  "Template check macro, so don't need to repeat code for different type of checks."
+  `(let ((value (make-correct-check ,form)))
      (make-check-struct 
-       :form ',form
-       :value value
-       :passed ,(if is-true  
+      :form ',form
+      :value value
+      :passed ,(if is-true  
                    '(not (null value ))
-                   '(null value))
-       :type :check
-       )) 
+                 '(null value))
+      :type :check
+      )) 
   )
 
 (defmacro check (form)
+  "Sets a CHECK in a TEST"
   `(prepare-check ,form )) 
 
 (defmacro check-not (form)
@@ -112,6 +121,7 @@ its value isn't exactly T or NIL. Otherwise evaluates to that value."
               :error-raised (type-of ,condition-var))))))))
 
 (defun register-test (name checks)
+  "Register the test NAME with it's relevant CHECKS to the *current-suite* variable."
   (check-type name symbol)
 
   (unless *current-suite*
@@ -133,12 +143,14 @@ its value isn't exactly T or NIL. Otherwise evaluates to that value."
 	   :documentation docstring))))
 
 (defmacro test (name &body body)
+  "Creates a TEST with 0 or more checks in body"
   `(register-test ',name
                   (list ,@body)))
 
 (defun find-test (name &key (registry *registry-suite*))
+  "Find i test with name TEST exists in REGISTRY (default *registry-suite*)"
   (loop for st being the hash-value of registry
-      thereis (gethash name (suite-tests st)))
+	thereis (gethash name (suite-tests st)))
   )
 
 (defun run-test (name &key (registry *registry-suite*))
@@ -171,6 +183,7 @@ its value isn't exactly T or NIL. Otherwise evaluates to that value."
 	(error "No test with name ~S exists" name))))
 
 (defun run-suite (name &key (registry *registry-suite*))
+"Runs the SUITE's NAME Tests."
   (check-type name symbol)
   
   (let ((current-suite (find-suite name :registry registry)))
@@ -193,7 +206,7 @@ its value isn't exactly T or NIL. Otherwise evaluates to that value."
 	  ))))
 
 (defun clear-suites ()
-  "Resets the *tests* variable"
+  "Resets the *-SUITE* variables"
   (setf *registry-suite* nil
 	*registry-suite* (make-hash-table :test #'eq)
 	*current-suite* nil))
