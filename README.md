@@ -124,7 +124,7 @@ NAME must be UNQUOTED symbol"
   ```
 
 
-  ## Library exports these functions 
+  ## Functions 
   ### clear-suites
   ```lisp
 (defun clear-suites ()
