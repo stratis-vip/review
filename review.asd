@@ -22,8 +22,8 @@
   :components ((:file "package")
                (:file "tests"))
   
-  :perform (test-op (op c)
+   :perform (test-op (op c)
                     (uiop:symbol-call :review :run-tests
-                                      :show-only-errors t 
-                                      :color t ))
-)
+                                      ;:show-only-errors t 
+                                      ;:color t
+				      )))
