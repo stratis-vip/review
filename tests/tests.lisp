@@ -8,6 +8,7 @@
 
 (defsuite first-suite)
 (defsuite second-suite)
+(defsuite third-suite)
 (in-suite first-suite)
 
 (test dokimi 
@@ -28,6 +29,11 @@
   (raise-error (car (not-really-a-list "alfa")) type-error)
   (raise-error (car (not-really-a-list "bita")) simple-error)
   )
+
+(in-suite second-suite)
+
+(test dokimi
+  (check t))
 
 (defun run-all-tests ()
   (run-tests)) 
