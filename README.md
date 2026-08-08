@@ -48,6 +48,7 @@ After that
 
 (defsuite first-suite)     ; creation of suite "first-suite"
 (defsuite second-suite)
+(defsuite third-suite)
 
 (in-suite first-suite)     ; all tests below - till next in-suite are in first-suite
 
@@ -70,6 +71,12 @@ After that
   (raise-error (car (not-really-a-list "bita")) simple-error)
   )
 
+(in-suite second-suite)
+
+(test dokimi
+  (check t))
+  
+  
 (defun run-all-tests ()
   (run-tests))
   
@@ -143,8 +150,8 @@ NAME must be UNQUOTED symbol"
   ```
   ### run-test
   ```lisp
-  (defun run-test (name &key (registry *registry-suite*))
-  "Runs the TEST NAME"
+  (defun run-test (name &key suite (registry *registry-suite*))
+  "Runs the TEST NAME in SUITE suit (if given)"
   ...)
   ```
   ### run-suite
