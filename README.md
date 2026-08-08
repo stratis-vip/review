@@ -153,3 +153,10 @@ NAME must be UNQUOTED symbol"
 "Runs the SUITE's NAME Tests."
 ...)
   ```
+
+  ### run-tests
+  ```lisp
+  (defun run-tests (&key (registry *registry-suite*))
+  "Run all Suites"
+  ...)
+   ```
