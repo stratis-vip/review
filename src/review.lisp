@@ -211,5 +211,11 @@ its value isn't exactly T or NIL. Otherwise evaluates to that value."
 	*registry-suite* (make-hash-table :test #'eq)
 	*current-suite* nil))
 
+(defun run-tests (&key (registry *registry-suite*))
+  "Run all Suites"
+  (if (zerop (hash-table-count registry))
+      (format t "No suites and tests YET!")
+      (loop for st being the hash-key of registry
+	    do (run-suite st :registry registry))))
 
 ;;;; review.lisp code ends here 
