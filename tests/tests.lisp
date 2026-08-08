@@ -29,6 +29,6 @@
   (raise-error (car (not-really-a-list "bita")) simple-error)
   )
 
-(defun run-tests ()
-  (format t "to be concluded")) 
+(defun run-all-tests ()
+  (run-tests)) 
 ;;;; tests.lisp code ends here.
