@@ -12,7 +12,8 @@
 
 (defstruct suite
   name
-  (tests (make-hash-table :test #'eq)))
+  (tests (make-hash-table :test #'eq))
+  passed)
 
 (defstruct test-struct
   name 
@@ -147,29 +148,31 @@ its value isn't exactly T or NIL. Otherwise evaluates to that value."
   `(register-test ',name
                   (list ,@body)))
 
-(defun find-test (name &key (registry *registry-suite*))
-  "Find i test with name TEST exists in REGISTRY (default *registry-suite*)"
-  (loop for st being the hash-value of registry
-	thereis (gethash name (suite-tests st)))
-  )
+(defun find-test (name &key suite (registry *registry-suite*))
+ "If SUITE is given, searches only within it. Otherwise searches every suite in REGISTRY."
+  (if suite
+      (gethash name (suite-tests suite))
+      (loop for st being the hash-value of registry
+	    thereis (gethash name (suite-tests st)))))
+  
 
-(defun run-test (name &key (registry *registry-suite*))
+(defun run-test (name &key suite (registry *registry-suite*))
   "Runs the TEST NAME"
   (check-type name symbol)
-  (let ((current-test (find-test name :registry registry)))
+  (let ((current-test (find-test name :suite suite :registry registry)))
     (if current-test
-        (let* ((check-list (test-struct-checks current-test))
-               (total-checks (length check-list))
-               (passed-cheks (loop for ch in check-list 
-                                   count (check-struct-passed ch)))
-               (failed-checks (- total-checks passed-cheks))
-               (test-passed (= total-checks passed-cheks))
-              
-              )
-          (progn 
-            (format t "~%Test: ~a (~A)~%" name (if test-passed "PASSED" "FAILED"))
-            (format t "Total cheks: ~d~%" total-checks)
-            (unless test-passed 
+	(let* ((check-list (test-struct-checks current-test))
+	       (total-checks (length check-list))
+	       (passed-cheks (loop for ch in check-list 
+				   count (check-struct-passed ch)))
+	       (failed-checks (- total-checks passed-cheks))
+	       (test-passed (= total-checks passed-cheks))
+		 
+		 )
+	    (progn 
+	      (format t "~%Test: ~a (~A)~%" name (if test-passed "PASSED" "FAILED"))
+	      (format t "Total cheks: ~d~%" total-checks)
+	      (unless test-passed 
                 (progn  (format t "Passed: ~d~%~%" passed-cheks)
                         (format t "Failed: ~d~%" failed-checks)
                         (loop for failed-test in (remove-if #'check-struct-passed check-list)
@@ -195,9 +198,11 @@ its value isn't exactly T or NIL. Otherwise evaluates to that value."
 	  (format t "No tests in suite ~S" name)
 	  (progn
 	    (loop for st being the hash-value of (suite-tests current-suite)
-		  do (run-test (test-struct-name st) :registry registry)
+		  do (run-test (test-struct-name st) :suite current-suite :registry registry)
 		     (when (test-struct-passed st) (incf passed))
 		  )
+	    (setf (suite-passed current-suite) (= total passed))
+
 	    (format t "~%Suite ~S: (~A)~%" name (if (= total  passed) "PASSED" "FAILED" ))
 	    (format t "Total tests: ~d~%" total)
 	    (format t "Failed tests: ~d~%" (- total passed))
@@ -207,15 +212,26 @@ its value isn't exactly T or NIL. Otherwise evaluates to that value."
 
 (defun clear-suites ()
   "Resets the *-SUITE* variables"
-  (setf *registry-suite* nil
-	*registry-suite* (make-hash-table :test #'eq)
+  (setf *registry-suite* (make-hash-table :test #'eq)
 	*current-suite* nil))
 
 (defun run-tests (&key (registry *registry-suite*))
   "Run all Suites"
   (if (zerop (hash-table-count registry))
       (format t "No suites and tests YET!")
-      (loop for st being the hash-key of registry
-	    do (run-suite st :registry registry))))
+      (let ((passed 0)
+	    (total (hash-table-count registry)))
+	(loop for name being the hash-key of registry using (hash-value suite)
+	      do (run-suite name :registry registry)
+		 (when (suite-passed suite) (incf passed))
+	      )
+	(format t "~%---------------------~%Total suites: ~d " total)
+	(if (= passed total)
+	    (format t "(ALL PASSED)~%")
+	    (format t "(FAILED)~%Passed: ~d~%Failed: ~d~%" passed (- total passed)))
+	)
+
+      
+      ))
 
 ;;;; review.lisp code ends here 
