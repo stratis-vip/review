@@ -14,6 +14,7 @@ After that
 ```lisp 
 (asdf:load-system :review)       ;; review Library 
 (asdf:load-system :review/tests) ;; Tests of review Library 
+(asdf:test-system :review/tests) ;; Run all tests
 ``` 
 
 1. Every test file must have the usual (defpackage ... ) section or a package.lisp file where the package will be defined
@@ -69,9 +70,9 @@ After that
   (raise-error (car (not-really-a-list "bita")) simple-error)
   )
 
-(defun run-tests ()
-  (format t "to be concluded")) 
-
+(defun run-all-tests ()
+  (run-tests))
+  
 ;;;; tests.lisp code ends here.
 ```
 
