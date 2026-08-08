@@ -13,7 +13,7 @@ You need to clone this repo to a position that common lisp recognize (usually to
 After that 
 ```lisp 
 (asdf:load-system :review)       ;; review Library 
-(asdf:load-system :review-tests) ;; Tests of review Library 
+(asdf:load-system :review/tests) ;; Tests of review Library 
 ``` 
 
 1. Every test file must have the usual (defpackage ... ) section or a package.lisp file where the package will be defined
