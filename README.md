@@ -7,11 +7,20 @@ A small testing library, written for practicing.
 A testing library, based on fiveam, that i create trying to understand better the testing mechanism. 
 
 # Usage 
+## Installation
+
+You need to clone this repo to a position that common lisp recognize (usually to ~/common-lisp/). 
+After that 
+```lisp 
+(asdf:load-system :review)       ;; review Library 
+(asdf:load-system :review-tests) ;; Tests of review Library 
+``` 
 
 1. Every test file must have the usual (defpackage ... ) section or a package.lisp file where the package will be defined
-2. (clear-suites) are mandatory to initialize library.
-3. We need to define at least one suite. Every suite can have from 0 to as-many-as-we-want checks. 
-4. For now there are 3 checks 
+2. you must :use :review 
+3. (clear-suites) are mandatory to initialize library.
+4. We need to define at least one suite. Every suite can have from 0 to as-many-as-we-want checks. 
+5. For now there are 3 checks 
 ```lisp
 (defmacro check (form)) ; checks if FORM is T
 (defmacro check-not (form)) ; checks if FORM is NIL
