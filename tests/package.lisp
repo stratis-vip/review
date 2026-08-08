@@ -5,7 +5,7 @@
 (defpackage :review/tests 
   (:use :cl :review)
   (:export 
-    :run-tests
+    :run-all-tests
     )
   )
 
