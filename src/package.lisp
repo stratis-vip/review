@@ -4,6 +4,8 @@
   :defsuite
   :in-suite
   :check
+  :check-for-all
+  :implies
   :check-not
   :raise-error
   :test
