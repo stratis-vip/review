@@ -21,11 +21,12 @@ After that
 2. you must :use :review 
 3. (clear-suites) are mandatory to initialize library.
 4. We need to define at least one suite. Every suite can have from 0 to as-many-as-we-want checks. 
-5. For now there are 3 checks 
+5. For now there are 5 checks 
 ```lisp
 (defmacro check (form)) ; checks if FORM is T
 (defmacro check-not (form)) ; checks if FORM is NIL
 (defmacro raise-error (form &optional (expected-error t)) ; checks if FORM will raise the - optional - expected error
+(defmacro check-for-all (variables &body expressions));Checks all EXPRESSIONS for every combination of VARIABLES.
 ``` 
 
 ## example
@@ -76,6 +77,18 @@ After that
 (test dokimi
   (check t))
   
+(check-for-all ((a -5 10) 
+                (b -5 10)
+		        (c -5 10))
+    (= (+ a c) (+ c a ))
+    (= (+ a (+ b c)) (+ (+ a b) c))
+    (= (* a b) ( * b a))
+    (= (* a (* b c) ) ( * ( * a b) c))))
+  
+(check 
+  (let ((a 3) (b 4) (c 5))
+  (implies (and (< a b) (< b c))
+           (< a c))))
   
 (defun run-all-tests ()
   (run-tests))
@@ -139,7 +152,33 @@ NAME must be UNQUOTED symbol"
 (or any error, if EXPECTED-ERROR is T or omitted). Returns a CHECK-STRUCT."
 ...)
   ```
+ ### check-for-all
+```lisp
+(defmacro check-for-all (variables &body expressions)
+  "Checks all EXPRESSIONS for every combination of VARIABLES.
 
+Each expression produces its own CHECK-STRUCT.
+
+Each CHECK-STRUCT stores:
+  - the expression,
+  - whether it passed,
+  - the number of attempts,
+  - the first counterexample, if any.
+
+All expressions are tested independently over all combinations.
+
+No EVAL is used."
+...)
+```
+
+ ### implies
+ ```lisp
+ (defmacro implies (condition consequence)
+ "Return T when the CONSEQUENCE is T based to the CONDITION
+ Must be inside a CHECK block."
+  `(or (not ,condition)
+       ,consequence))
+```
 
   ## Functions 
   ### clear-suites
