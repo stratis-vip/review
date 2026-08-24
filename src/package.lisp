@@ -13,4 +13,9 @@
   :run-test
   :run-suite
   :run-tests
+
+  ;;helpers
+  :return-t
+  :return-nil
+  :return-value 
    )) 
