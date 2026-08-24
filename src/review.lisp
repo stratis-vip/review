@@ -125,7 +125,7 @@ avoiding compile-time evaluation of the condition."
   (declare (ignore x))
   nil)
 
-(defun get-value (x)
+(defun return-value (x)
   "Returns the value of X unchanged.
 
 This function can be used to defer evaluation of a value until
