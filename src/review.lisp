@@ -103,6 +103,35 @@ CHECK-STRUCT. Εκτός running test, είναι :NOT-RUNNING.")
        (error "Unknown suite ~S" ',name))
      (setf *current-suite* local-suite)))
 
+;;; ----------------------------------------------------------------------
+;;; utilities
+;;; ----------------------------------------------------------------------
+
+(defun return-t (x)
+  "Returns T regardless of the value of X.
+
+X is intentionally ignored. This function is useful as a predicate
+when a condition should always be considered true at runtime, while
+avoiding compile-time evaluation of the condition." 
+  (declare (ignore x))
+  t)
+
+(defun return-nil (x)
+  "Returns NIL regardless of the value of X.
+
+X is intentionally ignored. This function is useful as a predicate
+when a condition should always be considered false at runtime, while
+avoiding compile-time evaluation of the condition."
+  (declare (ignore x))
+  nil)
+
+(defun get-value (x)
+  "Returns the value of X unchanged.
+
+This function can be used to defer evaluation of a value until
+runtime, particularly when a value must not be inspected or evaluated
+during macro expansion or compile-time processing."
+  (funcall (lambda (x) x ) x))
 
 ;;; ----------------------------------------------------------------------
 ;;; Basic checks
