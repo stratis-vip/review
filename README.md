@@ -20,8 +20,8 @@ After that
 ```
 
 1. Every test file must have the usual (defpackage ... ) section or a package.lisp file where the package will be defined
-2. you must :use :review
-3. (clear-suites) are mandatory to initialize library.
+2. You must :use :review
+3. (clear-suites) are mandatory to initialize library. Best solution is to create a fil test-setup.lisp that loads first of all tests and (clear-suites) only then. 
 4. We need to define at least one suite. Every suite can have from 0 to as-many-as-we-want checks.
 5. For now there are 5 checks
 
