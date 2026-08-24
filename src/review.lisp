@@ -88,12 +88,32 @@ CHECK-STRUCT. Εκτός running test, είναι :NOT-RUNNING.")
   (setf (gethash name registry)
         (make-suite :name name)))
 
+(defun remove-suite (name &key (registry *registry-suite*))
+  "Removes the suite NAME from REGISTRY.
+
+Returns T if the suite existed and was removed, otherwise NIL.
+If NAME is the current suite, *CURRENT-SUITE* is set to NIL."
+  (check-type name symbol)
+
+  (multiple-value-bind (suite present-p)
+      (gethash name registry)
+
+    (when present-p
+      (remhash name registry)
+
+      (when (eq suite *current-suite*)
+        (setf *current-suite* nil)))
+
+    present-p))
+
 
 (defmacro defsuite (name)
-  "Creates a SUITE structure with NAME and adds it to *REGISTRY-SUITE*."
+  "Creates a SUITE named NAME and registers it in *REGISTRY-SUITE*.
 
-  `(register-suite ',name))
-
+If a suite with NAME already exists, it is removed first."
+  `(progn
+     (remove-suite ',name)
+     (register-suite ',name)))
 
 (defmacro in-suite (name)
   "Sets *CURRENT-SUITE* to the suite with NAME."
