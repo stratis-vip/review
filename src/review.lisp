@@ -170,6 +170,7 @@ Otherwise evaluates to that value."
   `(prepare-check ,form :is-true nil))
 
 (defmacro implies (condition consequence)
+  "Return T when the CONSEQUENCE is T based to the CONDITION"
   `(or (not ,condition)
        ,consequence))
 
