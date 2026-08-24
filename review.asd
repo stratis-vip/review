@@ -1,7 +1,7 @@
 (defsystem :review 
   :description "A small testing library"
   :author "Stratis Christodoulou <stratis.vip@gmail.com"
-  :version 1.0.1
+  :version 1.0.2
   
   :depends-on ()
   :pathname "src"
