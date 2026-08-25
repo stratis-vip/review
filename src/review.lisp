@@ -63,6 +63,7 @@ CHECK-STRUCT. Εκτός running test, είναι :NOT-RUNNING.")
   expected
   error-expected
   error-raised
+  condition ;v1.10
   counterexample
   attempts)
 
@@ -167,45 +168,87 @@ during macro expansion or compile-time processing."
 (defmacro make-correct-check (form)
   "Evaluates FORM once.
 
-Signals an error if FORM raises an error, or if its value
-isn't exactly T or NIL.
+Signals an error if FORM signals an error, or if its value
+is neither T nor NIL.
 
-Otherwise evaluates to that value."
+Otherwise returns the value of FORM."
 
-  (let ((result (gensym "RESULT"))
-        (errored (gensym "ERRORED")))
+  (let ((result (gensym "RESULT-")))
 
-    `(let* ((,errored nil)
-            (,result
-              (handler-case
-                  ,form
-                (error ()
-                  (setf ,errored t)
-                  nil))))
+    `(let ((,result ,form))
 
-       (when (or ,errored
-                 (not (bool-atom-p ,result)))
+       ;; CHANGED:
+       ;; Previously this macro caught errors itself and converted
+       ;; them into a generic REVIEW error.
+       ;;
+       ;; Now errors are allowed to propagate to PREPARE-CHECK,
+       ;; which records the original condition.
+
+       (unless (bool-atom-p ,result)
+         ;; CHANGED:
+         ;; Report the actual returned value when it isn't T or NIL.
          (error
-          "Form ~S must be T or NIL, and must evaluate without error!"
-          ',form))
+          "Form ~S must evaluate to T or NIL, got ~S"
+          ',form
+          ,result))
 
        ,result)))
 
-
 (defmacro prepare-check (form &key (is-true t))
-  `(let ((value (make-correct-check ,form)))
-     (add-check
-      (make-check-struct
-       :form ',form
-       :value value
-       :passed ,(if is-true
-                    '(not (null value))
-                    '(null value))
-       :type :check
-       :expected ,(if is-true
-                      :true
-                      :false)))))
+  "Evaluates FORM and records the result as a CHECK-STRUCT.
 
+If FORM returns T or NIL, the result is checked against the
+expected value.
+
+If FORM signals an error, the original condition is stored in
+the CHECK-STRUCT and the check is marked as failed."
+
+  (let ((value     (gensym "VALUE-"))
+        (condition (gensym "CONDITION-"))
+        (errored   (gensym "ERRORED-")))
+
+    `(let ((,value nil)
+           (,condition nil)
+           (,errored nil))
+
+       ;; ADDED:
+       ;; Catch the error here instead of in MAKE-CORRECT-CHECK.
+       ;; This allows REVIEW to record the original condition
+       ;; without aborting the test.
+       (handler-case
+
+           (setf ,value
+                 (make-correct-check ,form))
+
+         ;; ADDED:
+         ;; Keep the ORIGINAL condition object.
+         (error (c)
+           (setf ,errored t
+                 ,condition c)))
+
+       (add-check
+        (make-check-struct
+         :form ',form
+         :value ,value
+
+         ;; CHANGED:
+         ;; A check cannot pass if the form raised an error.
+         :passed
+         (and (not ,errored)
+              ,(if is-true
+                   `(eq ,value t)
+                   `(eq ,value nil)))
+
+         :type :check
+
+         :expected
+         ,(if is-true
+              :true
+              :false)
+
+         ;; ADDED:
+         ;; Store the original condition, or NIL if no error occurred.
+         :condition ,condition)))))
 
 (defmacro check (form)
   "Sets a CHECK in a TEST."
@@ -492,9 +535,14 @@ Otherwise searches every suite in REGISTRY."
 
   (terpri))
 
+
 (defun report-result (check)
 
   (if (eq (check-struct-type check) :check)
+
+      ;; ------------------------------------------------------------
+      ;; NORMAL CHECK
+      ;; ------------------------------------------------------------
 
       (let ((prefix
               (if (eq (check-struct-expected check) :false)
@@ -503,33 +551,71 @@ Otherwise searches every suite in REGISTRY."
 
         (if (check-struct-passed check)
 
+            ;; CHECK PASSED
             (format t
                     "✓ ~a~S~%"
                     prefix
                     (check-struct-form check))
 
-            (progn
-              (format t
-                      "✗ ~a~S expected ~a~%"
-                      prefix
-                      (check-struct-form check)
-                      (if (eq (check-struct-expected check) :true)
-                          "T"
-                          "NIL"))))
+            ;; CHECK FAILED
+            (if (check-struct-condition check)
 
+                ;; ------------------------------------------------
+                ;; ADDED:
+                ;; The form raised an error.
+                ;;
+                ;; Show the ORIGINAL condition rather than hiding
+                ;; it behind a generic REVIEW error.
+                ;; ------------------------------------------------
+                (format t
+                        "✗ ~a~S raised ~S: ~A~%"
+                        prefix
+                        (check-struct-form check)
+                        (type-of
+                         (check-struct-condition check))
+                        (check-struct-condition check))
+
+                ;; ------------------------------------------------
+                ;; CHANGED:
+                ;; The form did not raise an error, but returned
+                ;; the wrong boolean value.
+                ;;
+                ;; Show:
+                ;;     expected X - got Y
+                ;; ------------------------------------------------
+                (format t
+                        "✗ ~a~S expected ~a - got ~S~%"
+                        prefix
+                        (check-struct-form check)
+                        (if (eq (check-struct-expected check) :true)
+                            "T"
+                            "NIL")
+                        (check-struct-value check))))
+
+        ;; ----------------------------------------------------------
         ;; CHECK-FOR-ALL attempts
+        ;; ----------------------------------------------------------
+
         (when (and (numberp (check-struct-attempts check))
                    (plusp (check-struct-attempts check)))
+
           (format t
                   "    Tries: ~d~%"
                   (check-struct-attempts check)))
 
+        ;; ----------------------------------------------------------
         ;; CHECK-FOR-ALL counterexample
+        ;; ----------------------------------------------------------
+
         (when (check-struct-counterexample check)
+
           (report-counterexample
            (check-struct-counterexample check))))
 
-      ;; :ERROR
+      ;; ============================================================
+      ;; ERROR CHECK -- RAISE-ERROR
+      ;; ============================================================
+
       (if (check-struct-passed check)
 
           (format t
@@ -542,6 +628,7 @@ Otherwise searches every suite in REGISTRY."
                   (check-struct-form check)
                   (check-struct-error-expected check)
                   (check-struct-error-raised check)))))
+
 
 ;;; ----------------------------------------------------------------------
 ;;; Run one test
