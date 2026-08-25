@@ -536,8 +536,13 @@ Otherwise searches every suite in REGISTRY."
   (terpri))
 
 
-(defun report-result (check)
+(defun report-result (check &key (only-errors t))
 
+  ;; If ONLY-ERRORS is true, don't report successful checks.
+  (when (and only-errors
+             (check-struct-passed check))
+    (return-from report-result nil))
+  
   (if (eq (check-struct-type check) :check)
 
       ;; ------------------------------------------------------------
@@ -634,10 +639,11 @@ Otherwise searches every suite in REGISTRY."
 ;;; Run one test
 ;;; ----------------------------------------------------------------------
 
-(defun run-test (name &key suite (registry *registry-suite*))
+(defun run-test (name &key suite (registry *registry-suite*) (only-errors t))
   "Runs TEST NAME.
 
-The test body is executed here, not during registration/loading."
+The test body is executed here, not during registration/loading.
+If only-errors set to T, report only failed checks!"
 
   (check-type name symbol)
 
@@ -700,9 +706,13 @@ The test body is executed here, not during registration/loading."
 	    (format t "Passed: ~d~%" passed-checks)
 	    (format t "Failed: ~d~%" failed-checks))
 
+	   ;; CHANGED: v1.1.1
+          ;; Pass ONLY-ERRORS to REPORT-RESULT.
 	  (loop for check in check-list
 		do
-		   (report-result check))
+		   (report-result
+		    check
+		    :only-errors only-errors))
 	 
 
           test-passed)))))
@@ -712,8 +722,9 @@ The test body is executed here, not during registration/loading."
 ;;; Run suite
 ;;; ----------------------------------------------------------------------
 
-(defun run-suite (name &key (registry *registry-suite*))
-  "Runs the SUITE's NAME tests."
+(defun run-suite (name &key (registry *registry-suite*) (only-errors t))
+  "Runs the SUITE's NAME tests.
+If only-errors set to T, report only failed checks! "
 
   (check-type name symbol)
 
@@ -749,7 +760,9 @@ The test body is executed here, not during registration/loading."
                  (run-test
                   (test-struct-name st)
                   :suite current-suite
-                  :registry registry)
+                  :registry registry
+		  ;;CHANGED v1.1.1
+		  :only-errors only-errors)
 
                  (when
                      (test-struct-passed st)
@@ -790,8 +803,9 @@ The test body is executed here, not during registration/loading."
    nil))
 
 
-(defun run-tests (&key (registry *registry-suite*))
-  "Runs all suites."
+(defun run-tests (&key (registry *registry-suite*) (only-errors t))
+  "Runs all suites.
+If only-errors set to T, report only failed checks! "
 
   (if (zerop
        (hash-table-count registry))
@@ -814,7 +828,9 @@ The test body is executed here, not during registration/loading."
           do
              (run-suite
               name
-              :registry registry)
+              :registry registry
+	      ;;CHANGED v.1.1.1
+	      :only-errors only-errors)
 
              (when
                  (suite-passed suite)
