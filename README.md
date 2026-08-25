@@ -212,24 +212,27 @@ Must be inside a CHECK block."
 ### run-test
 
 ```lisp
-(defun run-test (name &key suite (registry *registry-suite*))
-"Runs the TEST NAME in SUITE suit (if given)"
+(defun run-test (name &key suite (registry *registry-suite*) (only-errors t))
+"Runs the TEST NAME in SUITE suit (if given)
+If only-errors set to T, report only failed checks! "
 ...)
 ```
 
 ### run-suite
 
 ```lisp
-(defun run-suite (name &key (registry *registry-suite*))
-"Runs the SUITE's NAME Tests."
+(defun run-suite (name &key (registry *registry-suite*) (only-errors t))
+"Runs the SUITE's NAME Tests.
+If only-errors set to T, report only failed checks! "
 ...)
 ```
 
 ### run-tests
 
 ```lisp
-(defun run-tests (&key (registry *registry-suite*))
-"Run all Suites"
+(defun run-tests (&key (registry *registry-suite*)(only-errors t))
+"Run all Suites. 
+If only-errors set to T, report only failed checks! "
 ...)
 ```
 
